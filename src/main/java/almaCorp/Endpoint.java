@@ -1,5 +1,6 @@
 package almaCorp;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -27,16 +28,25 @@ public class Endpoint {
 	public Entity addUser(@Named("pseudo") String pseudo, @Named("nom") String nom, @Named("prenom") String prenom) {
 		Set<String> following = new HashSet<String>();
 		following.add(pseudo);
+		long nbPosts_init = 0;
+		
+		Query q =
+			    new Query("User")
+			        .setFilter(new FilterPredicate("pseudo" , FilterOperator.EQUAL, pseudo));
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		PreparedQuery pq = datastore.prepare(q);
+		int alreadyTaken = pq.countEntities(FetchOptions.Builder.withDefaults());
 		
 		Entity e = new Entity("User", pseudo+"_1");
 		e.setProperty("pseudo", pseudo);
 		e.setProperty("nom", nom);
 		e.setProperty("prenom", prenom);
-		e.setProperty("nbPosts", 0);
+		e.setProperty("nbPosts", nbPosts_init);
 		e.setProperty("following", following);
 		
-		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-		datastore.put(e);
+		if (alreadyTaken==0) {
+			datastore.put(e);
+		}
 		
 		return e;
 	}
@@ -55,20 +65,24 @@ public class Endpoint {
 		return result;
 	}
 	
-	/*
 	@ApiMethod(name = "follow", httpMethod = HttpMethod.PUT, path = "users/{follower}")
-	public Entity follow(@Named("follower") String follower, @Named("followed") String followed) {
-		Query q =
-			    new Query("User")
-			        .setFilter(new FilterPredicate("pseudo" , FilterOperator.EQUAL, follower));
-		
-		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
-		PreparedQuery pq = datastore.prepare(q);
-		Entity result = pq.asSingleEntity();
-		
-		return result;
-	}
-	*/
+    public Entity follow(@Named("follower") String follower, @Named("followed") String followed) {
+        Query q =
+                new Query("User")
+                    .setFilter(new FilterPredicate("pseudo" , FilterOperator.EQUAL, follower));
+
+        DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+        PreparedQuery pq = datastore.prepare(q);
+        Entity result = pq.asSingleEntity();
+
+        // Attention : la propriété following récupéré est une arrayList on peut donc avoir des doublons : faire un test pour éviter cela
+        ArrayList<String> list = (ArrayList<String>) result.getProperty("following");
+        list.add(followed);
+        result.setProperty("following",list);
+        datastore.put(result);
+
+        return result;
+    }
 	
 	@ApiMethod(name = "listAllUsers", httpMethod = HttpMethod.GET, path = "users")
 	public List<Entity> listAllUsers() {
@@ -104,19 +118,30 @@ public class Endpoint {
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		PreparedQuery pq = datastore.prepare(q);
 		Entity result = pq.asSingleEntity();
-		int id = (int) result.getProperty("nbPosts") + 1;
-		result.setProperty("nbPosts", id+1);
+		long id = (long) result.getProperty("nbPosts") + 1;
+		result.setProperty("nbPosts", id);
 		
 		Entity e = new Entity("Post", pseudo+"_"+id);
 		e.setProperty("pseudo", pseudo);
 		e.setProperty("message", message);
 		e.setProperty("date", new Date());
 		
-		
 		datastore.put(result);
 		datastore.put(e);
 		
 		return e;
 	}
+	
+	@ApiMethod(name = "refreshTimeline", httpMethod = HttpMethod.GET, path ="timeline")
+    public Entity refreshTimeline(@Named("pseudo") String pseudo) {
+        Query q =
+                new Query("Post");
+
+        DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+        PreparedQuery pq = datastore.prepare(q);
+        Entity result = pq.asSingleEntity();
+
+        return result;
+    }
 	
 }

@@ -1,0 +1,6 @@
+indexes :
+  - kind: Post
+    properties:
+      - name: pseudo
+      - name: date
+        direction: desc

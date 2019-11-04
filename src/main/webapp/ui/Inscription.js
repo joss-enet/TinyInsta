@@ -8,7 +8,9 @@ module.exports = {
 				m.request({
 					method: "POST",
 		            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users?nom="+nom+"&prenom="+prenom+"&pseudo="+pseudo,
-				})
+				})//.then(function(result) {
+				    //
+				//})
 			}
 		}, [
 			m("h1", "Inscription"),
