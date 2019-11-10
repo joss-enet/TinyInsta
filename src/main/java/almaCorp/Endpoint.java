@@ -117,7 +117,6 @@ public class Endpoint {
 		PreparedQuery pq = datastore.prepare(q);
 		Entity result = pq.asSingleEntity();
 		
-		
 		return result;
 	}
 	
