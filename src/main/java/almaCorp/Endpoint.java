@@ -1,5 +1,7 @@
 package almaCorp;
 
+
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -64,29 +66,33 @@ public class Endpoint {
 	
 	@ApiMethod(name = "follow", httpMethod = HttpMethod.PUT, path = "users/{follower}")
     public Entity follow(@Named("follower") String follower, @Named("followed") String followed) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
+		//Verify the follower exists
 		Query q =
 			    new Query("User")
 			        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", follower)));
-		
-		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		PreparedQuery pq = datastore.prepare(q);
 		int followerExists = pq.countEntities(FetchOptions.Builder.withLimit(1));
 
+		//Verify the followed exists
 		q =
 		    new Query("User")
 		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", follower)));
 		pq = datastore.prepare(q);
 		int followedExists = pq.countEntities(FetchOptions.Builder.withLimit(1));
 
-		Entity e = new Entity("Follow", follower+"_"+followed);
+		Entity f = new Entity("Follow", follower+"_"+followed);
+		Entity fb = new Entity("FollowedBy", followed+"_"+follower);
 		
 		if (followerExists==1 && followedExists==1) {
-	        datastore.put(e);
+	        datastore.put(f);
+	        datastore.put(fb);
 		} else {
 			//throw ;
 		}
 
-        return e;
+        return f;
     }
 	
 	@ApiMethod(name = "listAllUsers", httpMethod = HttpMethod.GET, path = "users")
@@ -117,35 +123,94 @@ public class Endpoint {
 	
 	@ApiMethod(name = "post", httpMethod = HttpMethod.POST, path ="users/{pseudo}/posts")
 	public Entity post(@Named("pseudo") String pseudo, @Named("message") String message) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
+		//Retrieve the posting user
 		Query q =
 		    new Query("User")
 		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", pseudo)));
-
-		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		PreparedQuery pq = datastore.prepare(q);
-		Entity result = pq.asSingleEntity();
-		long id = (long) result.getProperty("nbPosts") + 1;
-		result.setProperty("nbPosts", id);
+		Entity postingUser = pq.asSingleEntity();
 		
-		Entity e = new Entity("Post", pseudo+"_"+id);
+		Date ref = new Date(2100+1900, 1, 1, 0, 0, 0);
+		Date date = new Date();
+		long postId = (long) postingUser.getProperty("nbPosts") + 1;
+		boolean receiversRemain = true;
+		int offset = 0;
+		
+		//Search all the followers of the poster and add retrieve infos
+		while (receiversRemain) {
+			q =
+			    new Query("FollowedBy")
+			        .setFilter(new FilterPredicate("__key__" , FilterOperator.GREATER_THAN, KeyFactory.createKey("FollowedBy", pseudo+"_")));
+			pq = datastore.prepare(q);
+			List<Entity> receivers = pq.asList(FetchOptions.Builder.withLimit(10).offset(offset*10));
+		
+			if (receivers.size() != 0) {
+				
+				for (Entity entity : receivers) {
+					String key = entity.getKey().getName();
+					
+					//Verify if the key matches the pseudo of the poster
+					if (key.startsWith(pseudo+"_")) {
+						String receiver = key.substring(key.indexOf("_")+1);
+						Entity retrieveInfos = new Entity("RetrievePost", receiver+"_"+(ref.getTime()-date.getTime())+"_"+pseudo+"_"+postId);
+						datastore.put(retrieveInfos);
+						
+					} else {
+						receiversRemain = false;
+					}
+				}
+				
+			} else {
+				receiversRemain = false;
+			}
+			offset++;
+		}
+		
+		//Update the user's number of posts
+		postingUser.setProperty("nbPosts", postId);
+		datastore.put(postingUser);
+				
+		//Create the post
+		Entity e = new Entity("Post", pseudo+"_"+postId);
 		e.setProperty("pseudo", pseudo);
 		e.setProperty("message", message);
-		e.setProperty("date", new Date());
-		
-		datastore.put(result);
+		e.setProperty("date", date);
 		datastore.put(e);
 		
 		return e;
 	}
 	
 	@ApiMethod(name = "refreshTimeline", httpMethod = HttpMethod.GET, path ="timeline")
-    public Entity refreshTimeline(@Named("pseudo") String pseudo) {
-        Query q =
-                new Query("Post");
-
-        DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    public List<Entity> refreshTimeline(@Named("pseudo") String pseudo) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+        
+		//Get the 10 first posts destined to the user
+		Query q =
+                new Query("RetrievePost")
+                	.setFilter(new FilterPredicate("__key__" , FilterOperator.GREATER_THAN, KeyFactory.createKey("RetrievePost", pseudo+"_")));
         PreparedQuery pq = datastore.prepare(q);
-        Entity result = pq.asSingleEntity();
+        List<Entity> posts = pq.asList(FetchOptions.Builder.withLimit(10));
+        List<Entity> result = new ArrayList<Entity>();
+        
+        for (Entity entity : posts) {
+			String key = entity.getKey().getName();
+			
+			//Verify if the key matches the pseudo of the receiver
+			if (key.startsWith(pseudo+"_")) {
+				String[] keySplit = key.split("_");
+				String postId = keySplit[2]+"_"+keySplit[3];
+				
+				//Add the post to the result list
+				q =
+	                new Query("Post")
+	                	.setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("Post", postId)));
+		        pq = datastore.prepare(q);
+		        result.add(pq.asSingleEntity());
+				
+			}
+		}
 
         return result;
     }

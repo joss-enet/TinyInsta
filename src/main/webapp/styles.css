@@ -14,16 +14,21 @@
 }
 
 .button {
-    background: #eee;
+    background: #405de6;
     border: 1px solid #ddd;
     border-radius: 3px;
-    color: #333;
+    color: #eee;
     display: inline-block;
     margin: 0 0 10px;
     padding: 10px 15px;
     text-decoration: none;
+    font-weight: bold;
 }
 
 .button:hover {
-    background: #e8e8e8;
+    background: #3957ef;
+}
+
+h1 {
+	font-family: Arial, Helvetica, sans-serif;
 }
