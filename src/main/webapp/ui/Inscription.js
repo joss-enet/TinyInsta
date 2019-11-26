@@ -9,9 +9,7 @@ module.exports = {
 					method: "POST",
 		            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users?nom="+nom+"&prenom="+prenom+"&pseudo="+pseudo+"&password="+password,
 				}).then(function(result) {
-					var parsedResult = JSON.parse(result);
-					console.log(parsedResult);
-				    if (parsedResult.key.name != null) {
+					if (result.key.name == "ok") {
 				    	m.route.set("/timeline");
 			    	} else {
 				    	m.route.set("/loginFailed");

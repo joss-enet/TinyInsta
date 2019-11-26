@@ -24,6 +24,7 @@ version = "v1")
 
 public class Endpoint {
 	
+	//Password handling variables
 	int saltLength = 30;
 	String salt = PasswordUtils.getSalt(saltLength);
 	
@@ -32,6 +33,7 @@ public class Endpoint {
 		long nbPosts_init = 0;
 		String securedPassword = PasswordUtils.generateSecurePassword(password, salt);
 		
+		//Search the datastore for the pseudo to verify if it's available
 		Query q =
 			    new Query("User")
 			        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", pseudo))); 
@@ -39,6 +41,7 @@ public class Endpoint {
 		PreparedQuery pq = datastore.prepare(q);
 		int alreadyTaken = pq.countEntities(FetchOptions.Builder.withLimit(1));
 		
+		//Create the User Entity
 		Entity e = new Entity("User", pseudo);
 		e.setProperty("pseudo", pseudo);
 		e.setProperty("nom", nom);
@@ -55,6 +58,8 @@ public class Endpoint {
 		return e;
 	}
 	
+	
+	
 	@ApiMethod(name = "removeUser", httpMethod = HttpMethod.DELETE, path ="users/{pseudo}")
 	public Entity removeUser(@Named("pseudo") String pseudo) {
 		Query q =
@@ -69,24 +74,27 @@ public class Endpoint {
 		return new Entity("Reponse", "ok");
 	}
 	
+	
+	
 	@ApiMethod(name = "follow", httpMethod = HttpMethod.PUT, path = "users/{follower}")
     public Entity follow(@Named("follower") String follower, @Named("followed") String followed) throws Exception {
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		
-		//Verify the follower exists
+		//Verify if the follower exists
 		Query q =
 			    new Query("User")
 			        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", follower)));
 		PreparedQuery pq = datastore.prepare(q);
 		int followerExists = pq.countEntities(FetchOptions.Builder.withLimit(1));
 
-		//Verify the followed exists
+		//Verify if the followed exists
 		q =
 		    new Query("User")
 		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", followed)));
 		pq = datastore.prepare(q);
 		int followedExists = pq.countEntities(FetchOptions.Builder.withLimit(1));
 
+		//Add entries to the tables keeping track of following matters
 		Entity f = new Entity("Follow", follower+"_"+followed);
 		Entity fb = new Entity("FollowedBy", followed+"_"+follower);
 		
@@ -100,6 +108,8 @@ public class Endpoint {
 		return new Entity("Reponse", "ok");
     }
 	
+	
+	
 	@ApiMethod(name = "listAllUsers", httpMethod = HttpMethod.GET, path = "users")
 	public List<Entity> listAllUsers() {
 		Query q =
@@ -111,6 +121,8 @@ public class Endpoint {
 		
 		return result;
 	}
+	
+	
 	
 	@ApiMethod(name = "getUser", httpMethod = HttpMethod.GET, path = "users/{pseudo}")
 	public Entity getUser(@Named("pseudo") String pseudo) {
@@ -125,8 +137,12 @@ public class Endpoint {
 		return result;
 	}
 	
+	
+	
 	@ApiMethod(name = "verifyLogin", httpMethod = HttpMethod.GET, path = "verify")
 	public Entity verifyLogin(@Named("pseudo") String pseudo, @Named("password") String password) throws Exception {
+		
+		//Get the User Entity with corresponding pseudo
 		Query q =
 		    new Query("User")
 		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", pseudo)));
@@ -135,6 +151,7 @@ public class Endpoint {
 		PreparedQuery pq = datastore.prepare(q);
 		Entity user = pq.asSingleEntity();
 		
+		//Verify the password
 		String securedPassword = (String) user.getProperty("password");
 		boolean correctPassword = PasswordUtils.verifyUserPassword(password, securedPassword, salt);
 		
@@ -145,8 +162,11 @@ public class Endpoint {
 		}
 	}
 	
+	
+	
 	@ApiMethod(name = "post", httpMethod = HttpMethod.POST, path ="users/{pseudo}/posts")
-	public Entity post(@Named("pseudo") String pseudo, @Named("message") String message, @Named("image") String image) {
+	public Entity post(@Named("pseudo") String pseudo, PostRequestBody body) {
+		
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		
 		//Retrieve the posting user
@@ -198,13 +218,15 @@ public class Endpoint {
 		//Create the post
 		Entity e = new Entity("Post", pseudo+"_"+postId);
 		e.setProperty("pseudo", pseudo);
-		e.setProperty("message", message);
-		e.setProperty("image", image);
 		e.setProperty("date", date);
+		e.setProperty("image", body.getImage());
+		e.setProperty("message", body.getMessage());
 		datastore.put(e);
 		
 		return new Entity("Reponse", "ok");
 	}
+	
+	
 	
 	@ApiMethod(name = "refreshTimeline", httpMethod = HttpMethod.GET, path ="timeline")
     public List<Entity> refreshTimeline(@Named("pseudo") String pseudo) {

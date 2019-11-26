@@ -1,13 +1,5 @@
 var m = require("mithril")
 
-function encodeImageFileAsURL(element) {
-	  var file = element.files[0];
-	  var reader = new FileReader();
-	  reader.onloadend = function() {
-		  console.log('RESULT', reader.result)
-	  }
-	  reader.readAsDataURL(file);
-}
 
 module.exports = {
 	view: function() {
@@ -17,11 +9,13 @@ module.exports = {
 						e.preventDefault()
 						m.request({
 							method: "POST",
-				            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users/"+pseudo+"/posts?message="+message+"&image="+image,
+				            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users/"+pseudo+"/posts",
+				            body: {
+				            	"image": reader.result,
+				            	"message": message
+				            }
 						}).then(function(result) {
-							var parsedResult = JSON.parse(result);
-							console.log(parsedResult);
-						    if (parsedResult.key.name != "ok") {
+						    if (result.key.name == "ok") {
 						    	m.route.set("/homepage");
 					    	} else {
 						    	m.route.set("/loginFailed");
@@ -37,7 +31,14 @@ module.exports = {
             }),
             m("label.label", "Image"),
             m("input.input[type=file][accept=image/*][placeholder=mot de passe]", {
-                onchange: function (e) {image = encodeImageFileAsURL(e.target)},
+                onchange: function (e) {
+                	var file = e.target.files[0];
+                	reader = new FileReader();
+                	reader.onloadend = function() {
+                		console.log("load ", reader.result);
+              	  	}
+                	reader.readAsDataURL(file);
+                },
             }),
             m("label.label", "Message"),
             m("input.input[type=text][placeholder=message]", {
