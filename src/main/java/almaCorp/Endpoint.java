@@ -24,9 +24,13 @@ version = "v1")
 
 public class Endpoint {
 	
+	int saltLength = 30;
+	String salt = PasswordUtils.getSalt(saltLength);
+	
 	@ApiMethod(name = "addUser", httpMethod = HttpMethod.POST, path ="users")
-	public Entity addUser(@Named("pseudo") String pseudo, @Named("nom") String nom, @Named("prenom") String prenom) {
+	public Entity addUser(@Named("pseudo") String pseudo, @Named("nom") String nom, @Named("prenom") String prenom, @Named("password") String password) throws Exception {
 		long nbPosts_init = 0;
+		String securedPassword = PasswordUtils.generateSecurePassword(password, salt);
 		
 		Query q =
 			    new Query("User")
@@ -40,11 +44,12 @@ public class Endpoint {
 		e.setProperty("nom", nom);
 		e.setProperty("prenom", prenom);
 		e.setProperty("nbPosts", nbPosts_init);
+		e.setProperty("password", securedPassword);
 		
 		if (alreadyTaken==0) {
 			datastore.put(e);
 		} else {
-			//throw IllegalArgumentException();
+			throw new Exception("Pseudo already taken");
 		}
 		
 		return e;
@@ -61,11 +66,11 @@ public class Endpoint {
 		
 		datastore.delete(result.getKey());
 		
-		return result;
+		return new Entity("Reponse", "ok");
 	}
 	
 	@ApiMethod(name = "follow", httpMethod = HttpMethod.PUT, path = "users/{follower}")
-    public Entity follow(@Named("follower") String follower, @Named("followed") String followed) {
+    public Entity follow(@Named("follower") String follower, @Named("followed") String followed) throws Exception {
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		
 		//Verify the follower exists
@@ -78,7 +83,7 @@ public class Endpoint {
 		//Verify the followed exists
 		q =
 		    new Query("User")
-		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", follower)));
+		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", followed)));
 		pq = datastore.prepare(q);
 		int followedExists = pq.countEntities(FetchOptions.Builder.withLimit(1));
 
@@ -89,10 +94,10 @@ public class Endpoint {
 	        datastore.put(f);
 	        datastore.put(fb);
 		} else {
-			//throw ;
+			throw new Exception("One person doesn't exist");
 		}
 
-        return f;
+		return new Entity("Reponse", "ok");
     }
 	
 	@ApiMethod(name = "listAllUsers", httpMethod = HttpMethod.GET, path = "users")
@@ -120,8 +125,28 @@ public class Endpoint {
 		return result;
 	}
 	
+	@ApiMethod(name = "verifyLogin", httpMethod = HttpMethod.GET, path = "verify")
+	public Entity verifyLogin(@Named("pseudo") String pseudo, @Named("password") String password) throws Exception {
+		Query q =
+		    new Query("User")
+		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("User", pseudo)));
+
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		PreparedQuery pq = datastore.prepare(q);
+		Entity user = pq.asSingleEntity();
+		
+		String securedPassword = (String) user.getProperty("password");
+		boolean correctPassword = PasswordUtils.verifyUserPassword(password, securedPassword, salt);
+		
+		if (correctPassword) {
+			return new Entity("Reponse", "ok");
+		} else {
+			throw new Exception("Bad password");
+		}
+	}
+	
 	@ApiMethod(name = "post", httpMethod = HttpMethod.POST, path ="users/{pseudo}/posts")
-	public Entity post(@Named("pseudo") String pseudo, @Named("message") String message) {
+	public Entity post(@Named("pseudo") String pseudo, @Named("message") String message, @Named("image") String image) {
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		
 		//Retrieve the posting user
@@ -131,11 +156,10 @@ public class Endpoint {
 		PreparedQuery pq = datastore.prepare(q);
 		Entity postingUser = pq.asSingleEntity();
 		
-		Date ref = new Date(2100+1900, 1, 1, 0, 0, 0);
-		Date date = new Date();
 		long postId = (long) postingUser.getProperty("nbPosts") + 1;
 		boolean receiversRemain = true;
 		int offset = 0;
+		Date date = new Date();
 		
 		//Search all the followers of the poster and add retrieve infos
 		while (receiversRemain) {
@@ -153,7 +177,7 @@ public class Endpoint {
 					//Verify if the key matches the pseudo of the poster
 					if (key.startsWith(pseudo+"_")) {
 						String receiver = key.substring(key.indexOf("_")+1);
-						Entity retrieveInfos = new Entity("RetrievePost", receiver+"_"+(ref.getTime()-date.getTime())+"_"+pseudo+"_"+postId);
+						Entity retrieveInfos = new Entity("RetrievePost", receiver+"_"+DateUtils.createDate(date)+"_"+pseudo+"_"+postId);
 						datastore.put(retrieveInfos);
 						
 					} else {
@@ -175,10 +199,11 @@ public class Endpoint {
 		Entity e = new Entity("Post", pseudo+"_"+postId);
 		e.setProperty("pseudo", pseudo);
 		e.setProperty("message", message);
+		e.setProperty("image", image);
 		e.setProperty("date", date);
 		datastore.put(e);
 		
-		return e;
+		return new Entity("Reponse", "ok");
 	}
 	
 	@ApiMethod(name = "refreshTimeline", httpMethod = HttpMethod.GET, path ="timeline")

@@ -7,6 +7,8 @@ module.exports = {
 			m("a", {href: "#!/login"}, "Se connecter"),
 			m("br"),
 			m("a", {href: "#!/inscription"}, "Créer un compte"),
+			m("br"),
+			m("a", {href: "#!/post"}, "Poster"),
 		])
 	}
 }
