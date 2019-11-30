@@ -9,10 +9,10 @@ module.exports = {
 					method: "POST",
 		            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users?nom="+nom+"&prenom="+prenom+"&pseudo="+pseudo+"&password="+password,
 				}).then(function(result) {
-					if (result.key.name == "ok") {
+					if (result.key.name == pseudo) {
 				    	m.route.set("/timeline");
 			    	} else {
-				    	m.route.set("/loginFailed");
+				    	alert("Pseudo déjà attribué, veuillez réessayer.");
 			    	}
 				})
 			}
@@ -35,6 +35,9 @@ module.exports = {
                 oninput: function (e) {password = e.target.value},
             }),
             m("button.button[type=submit]",  "S'inscrire"),
+            m("button.button[type=button]", {
+				onclick: function(e) {m.route.set("/homepage")}
+			}, "Retour")
 		])
 	}
 }

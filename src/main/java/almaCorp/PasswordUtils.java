@@ -63,4 +63,10 @@ public class PasswordUtils {
         
         return returnValue;
     }
+    
+    /*
+    public static void main(String[] args) {
+    	System.out.println(getSalt(30));
+    }
+    */
 }

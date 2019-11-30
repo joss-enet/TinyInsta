@@ -4,7 +4,6 @@ var Homepage = require("./ui/Homepage.js")
 var Login = require("./ui/Login.js")
 var Inscription = require("./ui/Inscription.js")
 var Timeline = require("./ui/Timeline.js")
-var LoginFailed = require("./ui/LoginFailed.js")
 var Post = require("./ui/Post.js")
 
 
@@ -13,6 +12,5 @@ m.route(document.body, "/homepage", {
 	"/login": Login,
 	"/inscription": Inscription,
 	"/timeline": Timeline,
-	"/loginFailed": LoginFailed,
 	"/post": Post,
 })

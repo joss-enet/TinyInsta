@@ -4,9 +4,13 @@ module.exports = {
 	view: function() {
 		return m("main", [
 			m("h1", "Welcome to TinyInsta"),
-			m("a", {href: "#!/login"}, "Se connecter"),
+			m("button.button[type=button]", {
+				onclick: function(e) {m.route.set("/login")}
+			}, "Se connecter"),
 			m("br"),
-			m("a", {href: "#!/inscription"}, "Créer un compte"),
+			m("button.button[type=button]", {
+				onclick: function(e) {m.route.set("/inscription")}
+			}, "S'inscrire"),
 			m("br"),
 			m("a", {href: "#!/post"}, "Poster"),
 		])

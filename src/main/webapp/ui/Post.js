@@ -9,26 +9,22 @@ module.exports = {
 						e.preventDefault()
 						m.request({
 							method: "POST",
-				            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users/"+pseudo+"/posts",
+				            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users/"+sessionStorage.getItem("user")+"/posts",
 				            body: {
 				            	"image": reader.result,
 				            	"message": message
 				            }
 						}).then(function(result) {
 						    if (result.key.name == "ok") {
-						    	m.route.set("/homepage");
+						    	alert("Message posté!");
 					    	} else {
-						    	m.route.set("/loginFailed");
+						    	alert("Une erreur est survenue veuillez réessayer.");
 					    	}
 					    })
 					}
 				}
 			}, [
 			m("h1", "Post"),
-			m("label.label", "Pseudo"),
-            m("input.input[type=text][placeholder=pseudo]", {
-                oninput: function (e) {pseudo = e.target.value},
-            }),
             m("label.label", "Image"),
             m("input.input[type=file][accept=image/*][placeholder=mot de passe]", {
                 onchange: function (e) {
@@ -45,6 +41,9 @@ module.exports = {
                 oninput: function (e) {message = e.target.value},
             }),
             m("button.button[type=submit]",  "Poster"),
+            m("button.button[type=button]", {
+				onclick: function(e) {m.route.set("/homepage")}
+			}, "Retour")
 		])
 	}
 }
