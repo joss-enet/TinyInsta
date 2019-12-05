@@ -219,6 +219,7 @@ public class Endpoint {
 		e.setProperty("image", body.getImage());
 		e.setProperty("message", body.getMessage());
 		e.setProperty("likes", 0);
+		e.setProperty("id", postId);
 		datastore.put(e);
 		
 		//Search all the followers of the poster and add retrieve infos
@@ -259,11 +260,11 @@ public class Endpoint {
 	
 	@ApiMethod(name = "getPost", httpMethod = HttpMethod.GET, path ="users/{pseudo}/posts/{postID}")
 	public Entity getPost(@Named("pseudo") String pseudo, @Named("postID") String postID) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
 		Query q =
 		    new Query("Post")
 		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("Post", pseudo+"_"+postID)));
-
-		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		PreparedQuery pq = datastore.prepare(q);
 		Entity result = pq.asSingleEntity();
 		
@@ -326,7 +327,7 @@ public class Endpoint {
   		//Verify if the liker already liked this post
   		q =
   	  		    new Query("Like")
-  	  		        .setFilter(new FilterPredicate("__key__" , FilterOperator.GREATER_THAN, KeyFactory.createKey("Like", liker+"_")));
+  	  		        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("Like", liker+"_"+poster+"_"+postID)));
   	  		pq = datastore.prepare(q);
   	  		int postAlreadyLiked = pq.countEntities(FetchOptions.Builder.withLimit(1));
   		
@@ -368,9 +369,59 @@ public class Endpoint {
 	}
 	
 	
+	@ApiMethod(name = "hasLiked", httpMethod = HttpMethod.GET, path ="users/{liker}/likes/{poster}/{postID}")
+    public Entity hasLiked(@Named("poster") String poster, @Named("postID") String postID, @Named("liker") String liker) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
+		//Verify if the liker already liked the post
+  		Query q =
+  			    new Query("Like")
+  			        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("Like", liker+"_"+poster+"_"+postID)));
+  		PreparedQuery pq = datastore.prepare(q);
+  		int alreadyLiked = pq.countEntities(FetchOptions.Builder.withLimit(1));
+
+  		if (alreadyLiked == 1) {
+  			return new Entity("Reponse", "ok");
+  		} else {
+  			return new Entity("Reponse", "not ok");
+  		}
+		
+    }
+	
+	
+	@ApiMethod(name = "unlikePost", httpMethod = HttpMethod.DELETE, path ="users/{poster}/posts/{postID}")
+    public Entity unlikePost(@Named("poster") String poster, @Named("postID") String postID, @Named("liker") String liker) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
+		Query q =
+                new Query("Post")
+                	.setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("Post", poster+"_"+postID)));        
+		
+        Transaction transaction = datastore.beginTransaction();
+        try {
+			PreparedQuery pq = datastore.prepare(q);
+			Entity post = pq.asSingleEntity();
+			long counter = (long) post.getProperty("likes");
+			post.setProperty("likes", counter-1);
+			datastore.put(post);
+			transaction.commit();
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (transaction.isActive()) {
+			    transaction.rollback();
+			  }
+		}
+		
+		datastore.delete(KeyFactory.createKey("Like", liker+"_"+poster+"_"+postID));
+		datastore.delete(KeyFactory.createKey("LikedBy", poster+"_"+postID+"_"+liker));
+		
+		return new Entity("Reponse", "ok");
+	}
+	
 	
 	//------------------------Benchmark methods---------------------------
-	
+
 	@ApiMethod(name = "populateBenchmark", httpMethod = HttpMethod.POST, path ="populateBenchmark")
 	public Entity populateBenchmark(@Named("nbFollowers") int nbFollowers) {
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
