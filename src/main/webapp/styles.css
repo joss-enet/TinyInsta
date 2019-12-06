@@ -35,10 +35,8 @@
 
 
 .button.post {
-	position: sticky;
-	top: 0vw;
+    width: 80px;
 	left: 100vw;
-	z-index: 1;
 }
 
 
@@ -51,6 +49,13 @@ img {
 	width: auto;
 }
 
+.searchBar {
+	position: sticky;
+	top: 0vw;
+	left: 0vw;
+	z-index: 1;
+}
+
 .content-wrapper {
     display: flex;
     flex-direction: column;
@@ -60,8 +65,24 @@ img {
     height: 80vh;
 }
 
+
 main.homepage {
     padding: 20px 15px;
     border: 1px solid #ddd;
     border-radius: 3px;
 }
+
+form.search-bar {
+    display: flex;
+    width: 150px;
+}
+
+.top-bar {
+    //display: flex;
+    position: sticky;
+    top: 0vw;
+    width: 100;
+    z-index: 1;
+}
+
+

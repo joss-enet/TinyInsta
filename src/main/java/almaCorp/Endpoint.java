@@ -83,7 +83,7 @@ public class Endpoint {
 	
 	
 	
-	@ApiMethod(name = "follow", httpMethod = HttpMethod.PUT, path = "users/{follower}")
+	@ApiMethod(name = "follow", httpMethod = HttpMethod.PUT, path = "follow")
     public Entity follow(@Named("follower") String follower, @Named("followed") String followed) {
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
 		
@@ -116,6 +116,17 @@ public class Endpoint {
     }
 	
 	
+	@ApiMethod(name = "unfollow", httpMethod = HttpMethod.DELETE, path = "follow")
+    public Entity unfollow(@Named("follower") String follower, @Named("followed") String followed) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
+		datastore.delete(KeyFactory.createKey("Follow", follower+"_"+followed));
+		datastore.delete(KeyFactory.createKey("FollowedBy", followed+"_"+follower));
+        
+		return new Entity("Reponse", "ok");
+    }
+	
+	
 	
 	@ApiMethod(name = "listAllUsers", httpMethod = HttpMethod.GET, path = "users")
 	public List<Entity> listAllUsers() {
@@ -141,7 +152,11 @@ public class Endpoint {
 		PreparedQuery pq = datastore.prepare(q);
 		Entity result = pq.asSingleEntity();
 		
-		return result;
+		if (result == null) {
+			return new Entity("Reponse", "");
+		} else {
+			return result;
+		}
 	}
 	
 	

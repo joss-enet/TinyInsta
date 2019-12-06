@@ -16,7 +16,6 @@ module.exports = {
 							    	m.route.set("/timeline");
 						    	} else {
 						    		alert("Identifiants invalides, veuillez réessayer.");
-							    	//m.route.set("/loginFailed");
 						    	}
 						    })
 						}
