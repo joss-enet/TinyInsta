@@ -17,11 +17,7 @@ var data = {
 	        		if (result.items.length < 10) {
 	        			data.moreMessages = false;
 	        		}
-	        		
-	        		if (data.offset == 0) {
-	        			data.initFollowStatus;
-	        		}
-	        		
+	        		data.initFollowStatus();
 	        		data.posts[data.offset] = result.items;
 	        		data.posts[data.offset].map(row => 
 	        			data.initLikeButton(row.properties.pseudo, row.properties.id)
@@ -51,7 +47,12 @@ var data = {
 	    			if (result.key.name == "ok") {
 	    				data.followStatus = "Unfollow";
 	    	    	} else {
-	    	    		data.followStatus = "Follow";
+	    	    		if (data.user!=m.route.param("pseudo")) {
+	    	    			data.followStatus = "Follow";
+	    	    		} else {
+	    	    			document.getElementById("follow-button").remove();
+	    	    		}
+	    	    		
 	    	    	}
     		});
 	    }
@@ -99,7 +100,7 @@ module.exports = {
 									});
 								}
 							}
-						}, "Follow")
+						}, data.followStatus)
 					]),
 					m("div.profile-wrapper", [
 						m("h2", "Loading..."),
@@ -119,7 +120,7 @@ module.exports = {
 							if (document.getElementById("follow-button").textContent == "Follow") {
 								m.request({
 									method: "PUT",
-								    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+user+"&followed="+m.route.param("pseudo"),
+								    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+data.user+"&followed="+m.route.param("pseudo"),
 									}).then(function(result) {
 										if (result.key.name == "ok") {
 											document.getElementById("follow-button").textContent = "Unfollow";
@@ -131,7 +132,7 @@ module.exports = {
 							} else {
 								m.request({
 									method: "DELETE",
-								    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+user+"&followed="+m.route.param("pseudo"),
+								    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+data.user+"&followed="+m.route.param("pseudo"),
 									}).then(function(result) {
 										if (result.key.name == "ok") {
 											document.getElementById("follow-button").textContent = "Follow";

@@ -237,13 +237,14 @@ public class Endpoint {
 			return new Entity("Reponse", "not ok");
 		}
 		
-		long postId = (long) postingUser.getProperty("nbPosts") + 1;
+		long newPostCount = (long) postingUser.getProperty("nbPosts") + 1;
 		boolean receiversRemain = true;
 		int offset = 0;
 		Date date = new Date();
+		String postId = DateUtils.createDate(date);
 		
 		//Update the user's number of posts
-		postingUser.setProperty("nbPosts", postId);
+		postingUser.setProperty("nbPosts", newPostCount);
 		datastore.put(postingUser);
 				
 		//Create the post
@@ -272,7 +273,7 @@ public class Endpoint {
 					//Verify if the key matches the pseudo of the poster
 					if (key.startsWith(pseudo+"_")) {
 						String receiver = key.substring(key.indexOf("_")+1);
-						Entity retrieveInfos = new Entity("RetrievePost", receiver+"_"+DateUtils.createDate(date)+"_"+pseudo+"_"+postId);
+						Entity retrieveInfos = new Entity("RetrievePost", receiver+"_"+postId+"_"+pseudo+"_"+postId);
 						datastore.put(retrieveInfos);
 						
 					} else {
