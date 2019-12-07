@@ -127,6 +127,25 @@ public class Endpoint {
     }
 	
 	
+	@ApiMethod(name = "followStatus", httpMethod = HttpMethod.GET, path ="followStatus")
+    public Entity followStatus(@Named("follower") String follower, @Named("followed") String followed) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
+		//Verify if the user already follows this person
+  		Query q =
+  			    new Query("Follow")
+  			        .setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("Follow", follower+"_"+followed)));
+  		PreparedQuery pq = datastore.prepare(q);
+  		int alreadyFollowed = pq.countEntities(FetchOptions.Builder.withLimit(1));
+
+  		if (alreadyFollowed == 1) {
+  			return new Entity("Reponse", "ok");
+  		} else {
+  			return new Entity("Reponse", "not ok");
+  		}
+		
+    }
+	
 	
 	@ApiMethod(name = "listAllUsers", httpMethod = HttpMethod.GET, path = "users")
 	public List<Entity> listAllUsers() {
@@ -153,7 +172,7 @@ public class Endpoint {
 		Entity result = pq.asSingleEntity();
 		
 		if (result == null) {
-			return new Entity("Reponse", "");
+			return new Entity("Reponse", "not ok");
 		} else {
 			return result;
 		}
@@ -286,9 +305,35 @@ public class Endpoint {
 		return result;
 	}
 	
+	@ApiMethod(name = "getProfile", httpMethod = HttpMethod.GET, path ="users/{pseudo}/posts")
+    public List<Entity> getProfile(@Named("pseudo") String pseudo, @Named("offset") int offset) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+        
+		//Get the 10 first posts destined to the user
+		Query q =
+                new Query("Post")
+                	.setFilter(new FilterPredicate("__key__" , FilterOperator.GREATER_THAN, KeyFactory.createKey("Post", pseudo+"_")));
+        PreparedQuery pq = datastore.prepare(q);
+        List<Entity> posts = pq.asList(FetchOptions.Builder.withLimit(10).offset(offset*10));
+        List<Entity> result = new ArrayList<Entity>();
+        
+        for (Entity entity : posts) {
+			String key = entity.getKey().getName();
+			
+			//Verify if the key matches the pseudo of the receiver
+			if (key.startsWith(pseudo+"_")) {
+				
+				//Add the post to the result list
+		        result.add(entity);
+				
+			}
+		}
+
+        return result;
+    }
 	
 	@ApiMethod(name = "refreshTimeline", httpMethod = HttpMethod.GET, path ="timeline")
-    public List<Entity> refreshTimeline(@Named("pseudo") String pseudo) {
+    public List<Entity> refreshTimeline(@Named("pseudo") String pseudo, @Named("offset") int offset) {
 		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
         
 		//Get the 10 first posts destined to the user
@@ -296,7 +341,7 @@ public class Endpoint {
                 new Query("RetrievePost")
                 	.setFilter(new FilterPredicate("__key__" , FilterOperator.GREATER_THAN, KeyFactory.createKey("RetrievePost", pseudo+"_")));
         PreparedQuery pq = datastore.prepare(q);
-        List<Entity> posts = pq.asList(FetchOptions.Builder.withLimit(10));
+        List<Entity> posts = pq.asList(FetchOptions.Builder.withLimit(10).offset(offset*10));
         List<Entity> result = new ArrayList<Entity>();
         
         for (Entity entity : posts) {

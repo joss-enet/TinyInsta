@@ -2,7 +2,7 @@ var m = require("mithril")
 
 module.exports = {
 	view: function() {
-		return m("div.content-wrapper", [
+		return m("div.content-wrapper.centered", [
 					m("form", {
 					onsubmit: function(e) {
 						if (pseudo!="" && password!="") {

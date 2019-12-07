@@ -62,7 +62,14 @@ img {
     align-items: center;
     text-align: center;
     justify-content: space-around;
-    height: 80vh;
+}
+
+.content-wrapper.centered {
+	height: 80vh;
+}
+
+.content-wrapper.timeline {
+	
 }
 
 

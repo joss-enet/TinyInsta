@@ -1,28 +1,26 @@
-var m = require("mithril")
+var m = require("mithril");
 
 
 module.exports = {
 	view: function() {
-		return m("div.content-wrapper", [
+		return m("div.content-wrapper.centered", [
 					m("form", {
 					onsubmit: function(e) {
-						if (pseudo!="") {
-							e.preventDefault()
-							m.request({
-								method: "POST",
-					            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users/"+sessionStorage.getItem("user")+"/posts",
-					            body: {
-					            	"image": reader.result,
-					            	"message": message
-					            }
-							}).then(function(result) {
-							    if (result.key.name == "ok") {
-							    	alert("Message posté!");
-						    	} else {
-							    	alert("Une erreur est survenue veuillez réessayer.");
-						    	}
-						    })
-						}
+						e.preventDefault()
+						m.request({
+							method: "POST",
+				            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users/"+sessionStorage.getItem("user")+"/posts",
+				            body: {
+				            	"image": reader.result,
+				            	"message": message
+				            }
+						}).then(function(result) {
+						    if (result.key.name == "ok") {
+						    	alert("Message posté!");
+					    	} else {
+						    	alert("Une erreur est survenue veuillez réessayer.");
+					    	}
+					    })
 					}
 				}, [
 				m("h1", "Post"),
