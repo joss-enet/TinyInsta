@@ -35,6 +35,12 @@ var data = {
 	    	    		data.buttonValue[poster+postID] = "Like";
 	    	    	}
 	    		})
+    },
+    
+    checkRemainingPosts: function() {
+    	if (!data.moreMessages) {
+			document.getElementById("plus-button").remove();
+    	}
     }
    
 }
@@ -42,12 +48,14 @@ var data = {
 module.exports = {
 		
 	oninit: data.loadPosts,
+	
+	onupdate: data.checkRemainingPosts,
 		
 	view: function() {
 		
 		//if the data is not fully loaded, show loading sign
 		if (data.posts.length == 0) {
-			return m("main", [
+			return m("body", [
 					m("div.top-bar", 
 							m("form.search-bar", {
 								onsubmit: function(e) {
@@ -59,7 +67,7 @@ module.exports = {
 										if (result.key.name != "not ok") {
 									    	m.route.set("/profile/:pseudo", {pseudo: search} );
 								    	} else {
-									    	alert("Profil non trouvé");
+									    	alert("Profil non trouvé.");
 								    	}
 									})
 								}
@@ -158,23 +166,19 @@ module.exports = {
 					),
 					m("button.button[type=button][id=plus-button]", {
 						onclick: function(e) {
-							if (!data.moreMessages) {
-								document.getElementById("plus-button").remove();
-							} else {
-								m.request({
-						        	method: "GET",
-						            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/timeline?pseudo="+data.user+"&offset="+data.offset,
-						        	}).then(function(result) {
-						        		if (result.items.length < 10) {
-						        			data.moreMessages = false;
-						        		}
-						        		data.posts[data.offset] = result.items;
-						        		data.posts[data.offset].map(row => 
-						        			data.initLikeButton(row.properties.pseudo, row.properties.id)
-						        		);
-						        		data.offset = data.offset+1;
-						        	})
-							}
+							m.request({
+					        	method: "GET",
+					            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/timeline?pseudo="+data.user+"&offset="+data.offset,
+					        	}).then(function(result) {
+					        		if (result.items.length < 10) {
+					        			document.getElementById("plus-button").remove();
+					        		}
+					        		data.posts[data.offset] = result.items;
+					        		data.posts[data.offset].map(row => 
+					        			data.initLikeButton(row.properties.pseudo, row.properties.id)
+					        		);
+					        		data.offset = data.offset+1;
+					        	})
 			        	}
 					}, "Plus")
 			)

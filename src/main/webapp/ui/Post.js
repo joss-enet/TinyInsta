@@ -6,7 +6,7 @@ module.exports = {
 		return m("div.content-wrapper.centered", [
 					m("form", {
 					onsubmit: function(e) {
-						e.preventDefault()
+						e.preventDefault();
 						m.request({
 							method: "POST",
 				            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/users/"+sessionStorage.getItem("user")+"/posts",
@@ -14,13 +14,8 @@ module.exports = {
 				            	"image": reader.result,
 				            	"message": message
 				            }
-						}).then(function(result) {
-						    if (result.key.name == "ok") {
-						    	alert("Message posté!");
-					    	} else {
-						    	alert("Une erreur est survenue veuillez réessayer.");
-					    	}
-					    })
+						});
+						alert("Message posté.");
 					}
 				}, [
 				m("h1", "Post"),

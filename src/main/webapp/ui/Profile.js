@@ -55,6 +55,12 @@ var data = {
 	    	    		
 	    	    	}
     		});
+	    },
+	    
+	    checkRemainingPosts: function() {
+	    	if (!data.moreMessages) {
+				document.getElementById("plus-button").remove();
+	    	}
 	    }
 	
 	
@@ -65,6 +71,8 @@ module.exports = {
 
 	oninit: data.loadPosts,
 	
+	onupdate: data.checkRemainingPosts,
+	
 	view: function() {
 		
 		//if the data is not fully loaded, show loading sign
@@ -72,7 +80,7 @@ module.exports = {
 			return m("div.content-wrapper", [
 					m("div.head-wrapper", [
 						m("h1", "Profile of "+m.route.param("pseudo")),
-						m("button.button.post[type=button][id=follow-button]", {
+						m("button.button[type=button][id=follow-button]", {
 							onclick: function(e) {
 								
 								if (document.getElementById("follow-button").textContent == "Follow") {
@@ -114,7 +122,7 @@ module.exports = {
 		return m("div.content-wrapper", [
 				m("div.head-wrapper", [
 					m("h1", "Profile of "+m.route.param("pseudo")),
-					m("button.button.post[type=button][id=follow-button]", {
+					m("button.button[type=button][id=follow-button]", {
 						onclick: function(e) {
 							
 							if (document.getElementById("follow-button").textContent == "Follow") {
@@ -192,23 +200,19 @@ module.exports = {
 					),
 					m("button.button[type=button][id=plus-button]", {
 						onclick: function(e) {
-							if (!data.moreMessages) {
-								document.getElementById("plus-button").remove();
-							} else {
-								m.request({
-						        	method: "GET",
-						            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/timeline?pseudo="+data.user+"&offset="+data.offset,
-						        	}).then(function(result) {
-						        		if (result.items.length < 10) {
-						        			data.moreMessages = false;
-						        		}
-						        		data.posts[data.offset] = result.items;
-						        		data.posts[data.offset].map(row => 
-						        			data.initLikeButton(row.properties.pseudo, row.properties.id)
-						        		);
-						        		data.offset = data.offset+1;
-						        	})
-							}
+							m.request({
+					        	method: "GET",
+					            url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/timeline?pseudo="+data.user+"&offset="+data.offset,
+					        	}).then(function(result) {
+					        		if (result.items.length < 10) {
+					        			document.getElementById("plus-button").remove();
+					        		}
+					        		data.posts[data.offset] = result.items;
+					        		data.posts[data.offset].map(row => 
+					        			data.initLikeButton(row.properties.pseudo, row.properties.id)
+					        		);
+					        		data.offset = data.offset+1;
+					        	})
 			        	}
 					}, "Plus"),
 						
