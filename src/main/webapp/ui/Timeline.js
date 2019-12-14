@@ -102,7 +102,7 @@ module.exports = {
 							if (result.key.name == search) {
 						    	m.route.set("/profile/:pseudo", {pseudo: search} );
 					    	} else {
-						    	alert("Profil non trouvé");
+						    	alert("Profil non trouvé.");
 					    	}
 						})
 					}
@@ -118,11 +118,12 @@ module.exports = {
 			), 
 			m("div.content-wrapper.timeline", 
 					m("h1", "Timeline"),
-					m("table.timeline", 
+					m("div.timeline", 
 						data.posts.map(group =>
 							group.map(row => 
-								m("tr.timeline-pattern",
-									m("p.postPseudo", row.properties.pseudo),
+								m("div.timeline-pattern",
+									m(m.route.Link, {href: "/profile/"+row.properties.pseudo, class: "postPseudo"}, row.properties.pseudo),
+									m("br"),
 									m("img", {src: row.properties.image.value}),
 									m("p.postMessage", row.properties.message),
 									m("p.postLikes[id="+row.properties.pseudo+row.properties.id+"likes]", row.properties.likes),

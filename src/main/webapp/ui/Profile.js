@@ -120,43 +120,44 @@ module.exports = {
 		}
 		
 		return m("div.content-wrapper", [
-				m("div.head-wrapper", [
-					m("h1", "Profile of "+m.route.param("pseudo")),
-					m("button.button[type=button][id=follow-button]", {
-						onclick: function(e) {
-							
-							if (document.getElementById("follow-button").textContent == "Follow") {
-								m.request({
-									method: "PUT",
-								    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+data.user+"&followed="+m.route.param("pseudo"),
-									}).then(function(result) {
-										if (result.key.name == "ok") {
-											document.getElementById("follow-button").textContent = "Unfollow";
-								    	} else {
-								    		alert("Erreur.");
-								    	}
-								});
-	
-							} else {
-								m.request({
-									method: "DELETE",
-								    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+data.user+"&followed="+m.route.param("pseudo"),
-									}).then(function(result) {
-										if (result.key.name == "ok") {
-											document.getElementById("follow-button").textContent = "Follow";
-								    	} else {
-								    		alert("Erreur.");
-								    	}
-								});
+				m("div.timeline", [
+					m("div.head-wrapper", [
+						m("h1", "Profile of "+m.route.param("pseudo")),
+						m("button.button[type=button][id=follow-button]", {
+							onclick: function(e) {
+								
+								if (document.getElementById("follow-button").textContent == "Follow") {
+									m.request({
+										method: "PUT",
+									    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+data.user+"&followed="+m.route.param("pseudo"),
+										}).then(function(result) {
+											if (result.key.name == "ok") {
+												document.getElementById("follow-button").textContent = "Unfollow";
+									    	} else {
+									    		alert("Erreur.");
+									    	}
+									});
+		
+								} else {
+									m.request({
+										method: "DELETE",
+									    url: "https://tinyinsta-257216.appspot.com/_ah/api/tinyInstaAPI/v1/follow?follower="+data.user+"&followed="+m.route.param("pseudo"),
+										}).then(function(result) {
+											if (result.key.name == "ok") {
+												document.getElementById("follow-button").textContent = "Follow";
+									    	} else {
+									    		alert("Erreur.");
+									    	}
+									});
+								}
 							}
-						}
-					}, data.followStatus)
-				]),
-				m("div.profile-wrapper", [
+						}, data.followStatus)
+					]),
+				
 					
 					data.posts.map(group =>
 						group.map(row => 
-							m("tr.timeline-pattern",
+							m("div.timeline-pattern",
 								m("p.postPseudo", row.properties.pseudo),
 								m("img", {src: row.properties.image.value}),
 								m("p.postMessage", row.properties.message),
