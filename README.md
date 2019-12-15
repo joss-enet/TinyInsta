@@ -24,7 +24,11 @@ Afin d'obtenir des temps raisonnables lors de nos mesures, nous avons choisi d'u
 
 ![Fetch time per number of posts](/images/timeline_chart.png)  
 
-On obtient bien ce qui ressemble fortement à une droite, l'application semble donc pouvoir scaler.
+On obtient bien ce qui ressemble fortement à une droite, l'application semble donc pouvoir scaler.  
+
+**Nombre de likes possibles par seconde :**  
+
+![Likes per second](/images/likes_mesures.png)  
 
 ## Entités
 

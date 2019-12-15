@@ -1,6 +1,7 @@
 package almaCorp;
 
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -10,9 +11,11 @@ import com.google.api.server.spi.config.Api;
 import com.google.api.server.spi.config.ApiMethod;
 import com.google.api.server.spi.config.ApiMethod.HttpMethod;
 import com.google.api.server.spi.config.Named;
+import com.google.appengine.api.ThreadManager;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
@@ -708,4 +711,70 @@ public class Endpoint {
 
         return result;
     }
+	
+	@ApiMethod(name = "likeBenchmark", httpMethod = HttpMethod.GET, path ="likeBenchmark/{poster}/{postID}")
+    public Entity likeBenchmark(@Named("poster") String poster, @Named("postID") String postID) {
+		DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+		
+		Thread[] th=new Thread[2];
+		Random random=new Random();		
+		
+		for (int i=0;i<th.length;i++) {			
+			th[i]=ThreadManager.createThreadForCurrentRequest(new Runnable()  {
+				public void run() {
+					DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+					for (int j=0;j<50;j++) {
+						Transaction txn=ds.beginTransaction();
+						try {
+							int randomInt=random.nextInt(10)+1;
+							Query q =
+					                new Query("LikesCounter")
+					                	.setFilter(new FilterPredicate("__key__" , FilterOperator.EQUAL, KeyFactory.createKey("LikesCounter", poster+"_"+postID+"_"+randomInt)));
+							PreparedQuery pq = datastore.prepare(q);
+							Entity c = pq.asSingleEntity();
+							Long likes = (Long)c.getProperty("likes");
+							// UN SLEEP DE CONTENTION
+							Thread.sleep(20);
+							c.setProperty("likes", likes+1);
+							datastore.put(c);
+							txn.commit();
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} finally {
+							if (txn.isActive()) {
+							    txn.rollback();
+							  }
+						}
+					}
+				}
+			});
+			th[i].start();
+		}
+
+		for (Thread thread : th) {
+			try {
+				thread.join();
+			} catch (InterruptedException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+		}
+		
+		
+		Query q =
+			    new Query("LikesCounter")
+			        .setFilter(new FilterPredicate("__key__" , FilterOperator.GREATER_THAN, KeyFactory.createKey("LikesCounter", poster+"_"+postID+"_")));
+		PreparedQuery pq = datastore.prepare(q);
+		List<Entity> counters = pq.asList(FetchOptions.Builder.withLimit(10));
+		
+		long totalLikes = 0;
+		for (Entity entity : counters) {
+			totalLikes += (long) entity.getProperty("likes");
+		}
+		
+		return new Entity("Reponse", totalLikes);
+	}
 }
+
+
